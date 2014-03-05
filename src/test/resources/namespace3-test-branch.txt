@@ -1,0 +1,3 @@
+This file is only used in order to have a distinct commit
+for the test branch creation required for the tests in Pull Request
+https://github.com/jenkinsci/git-client-plugin/pull/120
