@@ -1,14 +1,19 @@
 package org.jenkinsci.plugins.gitclient;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
+
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.StringUtils;
 
+import com.gargoylesoftware.htmlunit.ProxyConfig;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+
 import hudson.Launcher;
 import hudson.Util;
+import hudson.ProxyConfiguration;
 import hudson.model.TaskListener;
 import hudson.plugins.git.Branch;
 import hudson.plugins.git.GitException;
@@ -17,6 +22,8 @@ import hudson.plugins.git.IGitAPI;
 import hudson.plugins.git.IndexEntry;
 import hudson.remoting.VirtualChannel;
 import hudson.util.IOUtils;
+import hudson.util.IOException2;
+import hudson.util.ReflectionUtils;
 import hudson.util.StreamTaskListener;
 import junit.framework.TestCase;
 
@@ -35,8 +42,12 @@ import org.eclipse.jgit.transport.URIish;
 import org.junit.Assert;
 import org.jvnet.hudson.test.Bug;
 import org.jvnet.hudson.test.TemporaryDirectoryAllocator;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisBase;
+import org.objenesis.ObjenesisStd;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,6 +62,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import jenkins.model.Jenkins;
 
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
@@ -83,6 +96,44 @@ public abstract class GitAPITestCase extends TestCase {
         WorkingArea(File repo) throws Exception {
             this.repo = repo;
             git = setupGitAPI(repo);
+            setupProxy(git);
+        }
+
+        private void setupProxy(GitClient gitClient)
+              throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+        {
+          final String proxyHost = getSystemProperty("proxyHost", "http.proxyHost", "https.proxyHost");
+          final String proxyPort = getSystemProperty("proxyPort", "http.proxyPort", "https.proxyPort");
+          final String proxyUser = getSystemProperty("proxyUser", "http.proxyUser", "https.proxyUser");
+          //final String proxyPassword = getSystemProperty("proxyPassword", "http.proxyPassword", "https.proxyPassword");
+          final String noProxyHosts = getSystemProperty("noProxyHosts", "http.noProxyHosts", "https.noProxyHosts");
+          if(isBlank(proxyHost) || isBlank(proxyPort)) return;
+          ProxyConfiguration proxyConfig = new ObjenesisStd().newInstance(ProxyConfiguration.class);
+          setField(ProxyConfiguration.class, "name", proxyConfig, proxyHost);
+          setField(ProxyConfiguration.class, "port", proxyConfig, Integer.parseInt(proxyPort));
+          setField(ProxyConfiguration.class, "userName", proxyConfig, proxyUser);
+          setField(ProxyConfiguration.class, "noProxyHost", proxyConfig, noProxyHosts);
+          //Password does not work since a set password results in a "Secret" call which expects a running Jenkins
+          setField(ProxyConfiguration.class, "password", proxyConfig, null);
+          setField(ProxyConfiguration.class, "secretPassword", proxyConfig, null);
+          gitClient.setProxy(proxyConfig);
+        }
+
+        private void setField(Class<?> clazz, String fieldName, Object object, Object value) 
+              throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+        {
+          Field declaredField = clazz.getDeclaredField(fieldName);
+          declaredField.setAccessible(true);
+          declaredField.set(object, value);
+        }
+
+        private String getSystemProperty(String ... keyVariants)
+        {
+          for(String key : keyVariants) {
+            String value = System.getProperty(key);
+            if(value != null) return value;
+          }
+          return null;
         }
 
         String cmd(String args) throws IOException, InterruptedException {
@@ -279,7 +330,11 @@ public abstract class GitAPITestCase extends TestCase {
 
     @Override
     protected void tearDown() throws Exception {
+      try {
         temporaryDirectoryAllocator.dispose();
+      } catch (IOException2 e) {
+        e.printStackTrace(System.err);
+      }
     }
 
     private void check_remote_url(final String repositoryName) throws InterruptedException, IOException {
@@ -1999,7 +2054,7 @@ public abstract class GitAPITestCase extends TestCase {
          * reference to localMirror will help performance of the C git
          * implementation, since that will avoid copying content which
          * is already local. */
-        String gitUrl = "git://github.com/jenkinsci/git-client-plugin.git";
+        String gitUrl = "https://github.com/jenkinsci/git-client-plugin.git";
         if (SystemUtils.IS_OS_WINDOWS) {
             // Does not leak an open file
             w = clone(gitUrl);
