@@ -254,6 +254,10 @@ class RemoteGitImpl implements GitClient, IGitAPI, Serializable {
         return proxy.isCommitInRepo(commit);
     }
 
+    public String[] getRemoteNames() throws GitException, InterruptedException {
+        return proxy.getRemoteNames();
+    }
+    
     public String getRemoteUrl(String name) throws GitException, InterruptedException {
         return proxy.getRemoteUrl(name);
     }
@@ -272,6 +276,10 @@ class RemoteGitImpl implements GitClient, IGitAPI, Serializable {
 
     public void checkout(String ref, String branch) throws GitException, InterruptedException {
         proxy.checkout(ref, branch);
+    }
+
+    public CheckoutCommand checkout() {
+        return command(CheckoutCommand.class);
     }
 
     public void checkoutBranch(String branch, String ref) throws GitException, InterruptedException {
@@ -302,8 +310,16 @@ class RemoteGitImpl implements GitClient, IGitAPI, Serializable {
         return command(MergeCommand.class);
     }
 
+    public InitCommand init_() {
+        return command(InitCommand.class);
+    }
+
     public FetchCommand fetch_() {
         return command(FetchCommand.class);
+    }
+
+    public PushCommand push() {
+        return command(PushCommand.class);
     }
 
     public void fetch(URIish url, List<RefSpec> refspecs) throws GitException, InterruptedException {
@@ -352,6 +368,10 @@ class RemoteGitImpl implements GitClient, IGitAPI, Serializable {
 
     public Set<Branch> getRemoteBranches() throws GitException, InterruptedException {
         return proxy.getRemoteBranches();
+    }
+
+    public Set<Branch> getLocalBranches() throws GitException, InterruptedException {
+        return proxy.getLocalBranches();
     }
 
     public void tag(String tagName, String comment) throws GitException, InterruptedException {
@@ -414,8 +434,20 @@ class RemoteGitImpl implements GitClient, IGitAPI, Serializable {
         proxy.submoduleUpdate(recursive);
     }
 
-    public void submoduleUpdate(boolean recursive, String reference) throws GitException, InterruptedException {
-        proxy.submoduleUpdate(recursive, reference);
+    public void submoduleUpdate(boolean recursive, String ref) throws GitException, InterruptedException {
+        proxy.submoduleUpdate(recursive, ref);
+    }
+
+    public void submoduleUpdate(boolean recursive, boolean remoteTracking) throws GitException, InterruptedException {
+        proxy.submoduleUpdate(recursive, remoteTracking);
+    }
+
+    public void submoduleUpdate(boolean recursive, boolean remoteTracking, String reference) throws GitException, InterruptedException {
+        proxy.submoduleUpdate(recursive, remoteTracking, reference);
+    }
+
+    public SubmoduleUpdateCommand submoduleUpdate() {
+        return command(SubmoduleUpdateCommand.class);
     }
 
     public void submoduleClean(boolean recursive) throws GitException, InterruptedException {

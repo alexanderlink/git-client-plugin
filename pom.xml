@@ -15,7 +15,7 @@
   </licenses>
 
   <artifactId>git-client</artifactId>
-  <version>1.6.4-SNAPSHOT</version>
+  <version>1.8.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>Jenkins GIT client plugin</name>
   <description>Utility plugin for Git support in Jenkins</description>
@@ -44,6 +44,11 @@
 			<name>Nicolas De Loof</name>
 			<email>nicolas.deloof@gmail.com</email>
 		</developer>
+		<developer>
+			<id>markewaite</id>
+			<name>Mark Waite</name>
+			<email>mark.earl.waite@gmail.com</email>
+		</developer>
 	</developers>
 
 
@@ -52,7 +57,7 @@
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
-      <version>3.2.0.201312181205-r</version>
+      <version>3.3.1.201403241930-r</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -101,8 +106,19 @@
       <version>11.0.1</version>
       <scope>provided</scope>
     </dependency>
-
-
+    <dependency>
+      <groupId>org.objenesis</groupId>
+      <artifactId>objenesis</artifactId>
+      <version>2.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-mockito-release-full</artifactId>
+      <version>1.5.4</version>
+      <classifier>full</classifier>
+      <scope>test</scope>
+    </dependency>      
   </dependencies>
 
   <scm>
